@@ -7,6 +7,7 @@ To run:
 To profile:
 ```
 python3 -m flamegraph -o benchmark.prof implementing_go_benchmark.py
-~/dev/FlameGraph/flamegraph.pl benchmark.prof > benchmark.svg
+flamegraph.pl benchmark.prof > benchmark.svg
 ```
 
+Flamegraph can be obtained by cloning [Brendan Gregg's repo](https://github.com/brendangregg/FlameGraph)
