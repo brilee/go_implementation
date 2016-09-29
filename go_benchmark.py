@@ -69,7 +69,7 @@ def measure_game_exec(initial_state):
         for move, color in zip(moves, itertools.cycle('XO')):
             try:
                 pos = pos.play_move(move, color)
-                pos.get_liberties()
+                #pos.get_liberties()
             except:
                 print(pos)
                 print(move, color)

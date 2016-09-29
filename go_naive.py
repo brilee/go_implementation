@@ -32,20 +32,23 @@ def get_valid_neighbors(fc):
 # Neighbors are indexed by flat coordinates
 NEIGHBORS = [get_valid_neighbors(fc) for fc in range(NN)]
 
+def unpack_bools(bool_array):
+    return [i for i, b in enumerate(bool_array) if b]
+
 def find_reached(board, fc):
     color = board[fc]
-    chain = set([fc])
-    reached = set()
+    chain = [False] * NN; chain[fc] = True
+    reached = [False] * NN
     frontier = [fc]
     while frontier:
         current_fc = frontier.pop()
-        chain.add(current_fc)
+        chain[current_fc] = True
         for fn in NEIGHBORS[current_fc]:
-            if board[fn] == color and not fn in chain:
+            if board[fn] == color and not chain[fn]:
                 frontier.append(fn)
             elif board[fn] != color:
-                reached.add(fn)
-    return list(chain), list(reached)
+                reached[fn] = True
+    return unpack_bools(chain), unpack_bools(reached)
 
 class IllegalMove(Exception): pass
 
