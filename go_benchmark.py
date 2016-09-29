@@ -64,13 +64,14 @@ final_liberties = [
 0,  0,  8,  3,  3,  3,  3,  0,  3,  3,  6,  0,  0,  3,  3,  4,  0,  0,  0,
 ]
 
-def measure_game_exec(initial_state, reps=1000):
+def measure_game_exec(initial_state, reps=1000, calc_libs=False):
     def snippet():
         pos = initial_state()
         for move, color in zip(moves, itertools.cycle('XO')):
             try:
                 pos = pos.play_move(move, color)
-                pos.get_liberties()
+                if calc_libs:
+                    pos.get_liberties()
             except:
                 print(pos)
                 print(move, color)
@@ -78,7 +79,7 @@ def measure_game_exec(initial_state, reps=1000):
 
         assert pos.get_board() == final
         assert pos.score() == result
-        #assert pos.get_liberties() == final_liberties
+        assert pos.get_liberties() == final_liberties
     time_taken = timeit.timeit(snippet, number=reps)
     return time_taken / reps
 
@@ -89,17 +90,18 @@ if __name__ == '__main__':
                         help='implementation to benchmark')
     parser.add_argument('runs', default=100, type=int,
                    help='number of repetitions of the game to play')
+    parser.add_argument('--calc_libs', action='store_true')
 
     args = parser.parse_args()
 
     if args.implementation == 'naive':
-      elapsed = measure_game_exec(go_naive.Position.initial_state, reps=args.runs)
+      elapsed = measure_game_exec(go_naive.Position.initial_state, reps=args.runs, calc_libs=args.calc_libs)
       print("go_naive takes %.4f secs to play a game that's 288 moves long" % elapsed)
     elif args.implementation == 'mutable':
-      elapsed = measure_game_exec(go_mutable.Position.initial_state, reps=args.runs)
+      elapsed = measure_game_exec(go_mutable.Position.initial_state, reps=args.runs, calc_libs=args.calc_libs)
       print("go_mutable takes %.4f secs to play a game that's 288 moves long" % elapsed)
     else:
-      elapsed = measure_game_exec(go_sets.Position.initial_state, reps=args.runs)
+      elapsed = measure_game_exec(go_sets.Position.initial_state, reps=args.runs, calc_libs=args.calc_libs)
       print("go_sets takes %.4f secs to play a game that's 288 moves long" % elapsed)
 
 
