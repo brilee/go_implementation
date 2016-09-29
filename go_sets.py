@@ -55,8 +55,8 @@ def place_stone(color, board, fc):
 def bulk_place_stones(color, board, stones):
     byteboard = bytearray(board, encoding='ascii') # create mutable version of board
     color = ord(color)
-    for fstone in stones:
-        byteboard[fstone] = color
+    for fs in stones:
+        byteboard[fs] = color
     return byteboard.decode('ascii') # and cast back to string when done
 
 def maybe_capture_stones(board, fc):
@@ -106,6 +106,7 @@ class LibertyTracker():
     def __init__(self, group_index, groups, liberty_cache=None, max_group_id=1):
         # group_index: a NN-length array of None/group_ids
         # groups: a dict of group_id to groups
+        # liberty_cache: a NN-length array of liberty counts
         self.group_index = group_index
         self.groups = groups
         if liberty_cache is not None:
@@ -138,22 +139,18 @@ class LibertyTracker():
         friendly_neighboring_group_ids = set()
         empty_neighbors = set()
 
-        new_group = self._create_group(color, fc)
-
-
         for fn in NEIGHBORS[fc]:
             neighbor_group_id = self.group_index[fn]
             if neighbor_group_id is not None:
                 neighbor_group = self.groups[neighbor_group_id]
                 if neighbor_group.color == color:
                     friendly_neighboring_group_ids.add(neighbor_group_id)
-                elif neighbor_group.color == swap_colors(color):
+                else:
                     opponent_neighboring_group_ids.add(neighbor_group_id)
             else:
                 empty_neighbors.add(fn)
 
-        # initialize liberties for the newly created group
-        self._update_liberties(new_group.id, add=empty_neighbors)
+        new_group = self._create_group(color, fc, empty_neighbors)
 
         for group_id in friendly_neighboring_group_ids:
             new_group = self._merge_groups(group_id, new_group.id)
@@ -161,39 +158,41 @@ class LibertyTracker():
         for group_id in opponent_neighboring_group_ids:
             neighbor_group = self.groups[group_id]
             if len(neighbor_group.liberties) == 1:
-                captured = self._remove_group(group_id)
+                captured = self._capture_group(group_id)
                 captured_stones.update(captured)
             else:
                 self._update_liberties(group_id, remove={fc})
 
-        self._add_liberties(captured_stones)
+        self._handle_captures(captured_stones)
 
         return captured_stones
 
-    def _create_group(self, color, fc):
+    def _create_group(self, color, fc, liberties):
         self.max_group_id += 1
-        new_group = Group(self.max_group_id, set([fc]), set(), color)
+        new_group = Group(self.max_group_id, set([fc]), liberties, color)
         self.groups[new_group.id] = new_group
         self.group_index[fc] = new_group.id
+        self.liberty_cache[fc] = len(liberties)
         return new_group
 
     def _merge_groups(self, group1_id, group2_id):
         group1 = self.groups[group1_id]
         group2 = self.groups[group2_id]
         group1.stones.update(group2.stones)
-        self._update_liberties(group1_id, add=group2.liberties, remove=(group2.stones | group1.stones))
         del self.groups[group2_id]
         for fs in group2.stones:
             self.group_index[fs] = group1_id
 
+        self._update_liberties(group1_id, add=group2.liberties, remove=(group2.stones | group1.stones))
+
         return group1
 
-    def _remove_group(self, group_id):
+    def _capture_group(self, group_id):
         dead_group = self.groups[group_id]
+        del self.groups[group_id]
         for fs in dead_group.stones:
             self.group_index[fs] = None
             self.liberty_cache[fs] = 0
-        del self.groups[group_id]
         return dead_group.stones
 
     def _update_liberties(self, group_id, add=None, remove=None):
@@ -207,13 +206,13 @@ class LibertyTracker():
         for fs in group.stones:
             self.liberty_cache[fs] = new_lib_count
 
-    def _add_liberties(self, captured_stones):
-        for fstone in captured_stones:
-            for fn in NEIGHBORS[fstone]:
+    def _handle_captures(self, captured_stones):
+        for fs in captured_stones:
+            for fn in NEIGHBORS[fs]:
                 group_id = self.group_index[fn]
                 if group_id is not None:
-                    self._update_liberties(group_id, add={fstone})
-        
+                    self._update_liberties(group_id, add={fs})
+
 
 def is_koish(board, fc):
     'Check if fc is surrounded on all sides by 1 color, and return that color'
