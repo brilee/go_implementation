@@ -45,7 +45,7 @@ def find_reached(board, fc):
                 frontier.append(fn)
             elif board[fn] != color:
                 reached.add(fn)
-    return list(chain), list(reached)
+    return chain, reached
 
 class IllegalMove(Exception): pass
 
@@ -88,7 +88,6 @@ def play_move_incomplete(board, fc, color):
         board, _ = maybe_capture_stones(board, fs)
 
     return board
-
 
 def is_koish(board, fc):
     'Check if fc is surrounded on all sides by 1 color, and return that color'
@@ -149,7 +148,7 @@ class Position(namedtuple('Position', ['board', 'ko'])):
         while EMPTY in board:
             fempty = board.index(EMPTY)
             empties, borders = find_reached(board, fempty)
-            possible_border_color = board[borders[0]]
+            possible_border_color = board[list(borders)[0]]
             if all(board[fb] == possible_border_color for fb in borders):
                 board = bulk_place_stones(possible_border_color, board, empties)
             else:
