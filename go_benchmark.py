@@ -2,9 +2,7 @@ import argparse
 import itertools
 import re
 import textwrap
-import timeit
-import flamegraph
-from go_naive import N, NN
+import time
 import go_naive
 import go_mutable
 import go_sets
@@ -65,7 +63,8 @@ final_liberties = [
 ]
 
 def measure_game_exec(initial_state, reps=1000, calc_libs=False):
-    def snippet():
+    tick = time.time()
+    for i in range(reps):
         pos = initial_state()
         for move, color in zip(moves, itertools.cycle('XO')):
             try:
@@ -80,7 +79,7 @@ def measure_game_exec(initial_state, reps=1000, calc_libs=False):
         assert pos.get_board() == final
         assert pos.score() == result
         assert pos.get_liberties() == final_liberties
-    time_taken = timeit.timeit(snippet, number=reps)
+    time_taken = time.time() - tick
     return time_taken / reps
 
 if __name__ == '__main__':
@@ -103,5 +102,3 @@ if __name__ == '__main__':
     else:
       elapsed = measure_game_exec(go_sets.Position.initial_state, reps=args.runs, calc_libs=args.calc_libs)
       print("go_sets takes %.4f secs to play a game that's 288 moves long" % elapsed)
-
-

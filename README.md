@@ -6,7 +6,7 @@ To run:
 
 To profile:
 ```
-python3 -m flamegraph -o benchmark.prof implementing_go_benchmark.py
+python3 -m flamegraph -o benchmark.prof go_benchmark.py
 flamegraph.pl benchmark.prof > benchmark.svg
 ```
 
