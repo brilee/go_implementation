@@ -112,9 +112,11 @@ class Position(namedtuple('Position', ['board', 'ko'])):
     
     def play_move(self, fc, color):
         board, ko = self
-        if fc == ko or board[fc] != EMPTY:
-            print(self)
-            raise IllegalMove
+        if fc == ko:
+            raise IllegalMove("%s\n Move at %s illegally retakes ko." % (self, fc))
+
+        if board[fc] != EMPTY:
+            raise IllegalMove("%s\n Stone exists at %s." % (self, fc))
 
         possible_ko_color = is_koish(board, fc)
         new_board = place_stone(color, board, fc)
@@ -133,8 +135,10 @@ class Position(namedtuple('Position', ['board', 'ko'])):
             new_board, captured = maybe_capture_stones(new_board, fs)
             opp_captured += len(captured)
 
-        for fs in my_stones:
-            new_board, captured = maybe_capture_stones(new_board, fs)
+        # Check for suicide
+        new_board, captured = maybe_capture_stones(new_board, fc)
+        if captured:
+            raise IllegalMove("\n%s\n Move at %s is suicide." % (self, fc))
 
         if opp_captured == 1 and possible_ko_color == opp_color:
             new_ko = list(opp_captured)[0]

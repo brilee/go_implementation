@@ -115,8 +115,11 @@ class Position():
         color = ord(color)
         board, ko = self.board, self.ko
 
-        if fc == ko or board[fc] != EMPTY:
-            raise IllegalMove
+        if fc == ko:
+            raise IllegalMove("%s\n Move at %s illegally retakes ko." % (self, fc))
+
+        if board[fc] != EMPTY:
+            raise IllegalMove("%s\n Stone exists at %s." % (self, fc))
 
         board[fc] = color
 
@@ -134,8 +137,10 @@ class Position():
             captured = maybe_capture_stones(board, fs)
             opp_captured += len(captured)
 
-        for fs in my_stones:
-            captured = maybe_capture_stones(board, fs)
+        # Check for suicide
+        captured = maybe_capture_stones(board, fc)
+        if captured:
+            raise IllegalMove("\n%s\n Move at %s is suicide." % (self, fc))
 
         if opp_captured == 1 and is_koish(board, fc) == opp_color:
             new_ko = fc

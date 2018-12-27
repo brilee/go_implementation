@@ -237,12 +237,19 @@ class Position(namedtuple('Position', ['board', 'ko', 'liberty_tracker'])):
 
     def play_move(self, fc, color):
         board, ko, liberty_tracker = self
-        if fc == ko or board[fc] != EMPTY:
-            raise IllegalMove
+
+        if fc == ko:
+            raise IllegalMove("%s\n Move at %s illegally retakes ko." % (self, fc))
+
+        if board[fc] != EMPTY:
+            raise IllegalMove("%s\n Stone exists at %s." % (self, fc))
 
         possible_ko_color = is_koish(board, fc)
         new_board = place_stone(color, board, fc)
         new_liberty_tracker, captured_stones = liberty_tracker.add_stone(color, fc)
+        if new_liberty_tracker.get_liberties()[fc] == 0:
+            raise IllegalMove("\n%s\n Move at %s is suicide." % (self, fc))
+
         new_board = bulk_place_stones(EMPTY, new_board, captured_stones)
 
         opp_color = swap_colors(color)
